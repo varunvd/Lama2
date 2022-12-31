@@ -1,0 +1,1 @@
+choco install lama2 --force
