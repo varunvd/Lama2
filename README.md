@@ -2,7 +2,7 @@
 
 
 <div align="center">
-<img src="banner.png" width="80%" />
+<img src="https://hexmos.com/lama2/banner.png" width="80%" />
 
 ![Build](https://github.com/HexmosTech/Lama2/actions/workflows/release.yml/badge.svg)
 ![Test](https://github.com/HexmosTech/Lama2/actions/workflows/testapp.yml/badge.svg)
@@ -32,18 +32,18 @@ data dumps into a  nice  Plain-Text Lama2 repo.
 
 ## Terminal Demo: A POST request
 
-![](docs/Lama2/docs/demo.gif)
+![](https://hexmos.com/lama2/demo.gif)
 
 ## VSCode Demo: The same POST request
 
-![](docs/Lama2/docs/demo2.gif)
+![](https://hexmos.com/lama2/demo2.gif)
 
 ## Installation/Update
 
 For **Linux/MacOS** systems, run the following command to either install or update *Lama2*:
 
 ```
-curl -s https://raw.githubusercontent.com/HexmosTech/Lama2/main/install.sh | bash -s
+curl -s https://hexmos.com/lama2/install.sh | bash -s
 ```
 
 Learn more about other installation methods from [our docs](https://hexmos.com/lama2/tutorials/installation.html).
