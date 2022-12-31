@@ -1,1 +1,1 @@
-choco install lama2 --force
+choco install lama2 --force -y
