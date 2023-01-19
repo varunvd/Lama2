@@ -1,7 +1,7 @@
 name: Build on Windows
 on:
   release:
-    types: [published]
+    types: [push]
 jobs:
   build:
     runs-on: windows-2019
@@ -45,7 +45,6 @@ jobs:
           " | Out-String
           choco install wget -y
           wget $lamaUrl
-          git clone https://github.com/HexmosTech/Lama2-Chocolatey.git
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           choco push <package_name>.nupkg --source https://push.chocolatey.org/
                                       
