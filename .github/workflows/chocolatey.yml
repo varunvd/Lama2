@@ -51,6 +51,7 @@ jobs:
           dir
           echo `ls`
           echo `dir`
+          Get-FileHash lama2.zip
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           
                                       
