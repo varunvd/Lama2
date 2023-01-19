@@ -46,6 +46,9 @@ jobs:
           wget $lamaUrl
           echo "Printing file contents"
           ls
+          dir
+          echo `ls`
+          echo `dir`
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           
                                       
