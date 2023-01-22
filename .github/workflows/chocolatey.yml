@@ -43,15 +43,9 @@ jobs:
           " | Out-String
           choco install wget -y
           wget $lamaUrl -o lama2.zip
-          echo "Printing lama url"
-          echo $lamaUrl
-          echo "$lamaUrl"
-          echo "Printing file contents"
-          ls
-          dir
-          echo `ls`
-          echo `dir`
           Get-FileHash lama2.zip
+          git clone https://github.com/HexmosTech/Lama2-Chocolatey.git .
+          ls
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           
                                       
