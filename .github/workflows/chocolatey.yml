@@ -46,7 +46,7 @@ jobs:
           Get-FileHash lama2.zip
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
           ls
-          ls -l LamaChocolatey
+          cd LamaChocolatey && ls
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           
                                       
