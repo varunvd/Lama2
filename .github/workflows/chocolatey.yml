@@ -5,6 +5,42 @@ jobs:
     runs-on: windows-2019
     steps:
       -  run: |
+          $lamaUrl64 = python -c "
+          import struct
+          import json
+          import http.client
+
+          def get_file():
+              conn = http.client.HTTPSConnection('api.github.com')
+              payload = ''
+              headers = {
+                  'User-Agent': 'Hexmos'
+              }
+              conn.request('GET', '/repos/HexmosTech/Lama2/releases/latest', payload, headers)
+              res = conn.getresponse()
+              data = res.read()
+              return json.loads(data.decode('utf-8'))
+
+          def get_platform():
+              return 'amd64'
+
+          def search(files, platform):
+              search_string = 'windows-' + platform
+              for row in files['assets']:
+                  if search_string in row['name'] and 'md5' not in row['name']:
+                      return row['browser_download_url']            
+
+          def main():
+              files = get_file()
+              platform = get_platform()
+              download_link = search(files, platform)
+              return download_link
+
+          if __name__ == '__main__':
+              link = main()
+              print(link)
+          " | Out-String
+          
           $lamaUrl = python -c "
           import struct
           import json
@@ -22,8 +58,7 @@ jobs:
               return json.loads(data.decode('utf-8'))
 
           def get_platform():
-              platform = 8*struct.calcsize('P')
-              return 'amd64' if platform == 64 else '386'
+              return '386'
 
           def search(files, platform):
               search_string = 'windows-' + platform
@@ -42,8 +77,12 @@ jobs:
               print(link)
           " | Out-String
           choco install wget -y
+          wget $lamaUrl64 -o lama264.zpi
           wget $lamaUrl -o lama2.zip
           Get-FileHash lama2.zip
+          echo "Printing two downloaded files"
+          ls
+          echo "Done printing"
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
           ls
           cd LamaChocolatey && ls
