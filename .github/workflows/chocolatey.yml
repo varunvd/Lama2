@@ -77,7 +77,7 @@ jobs:
               print(link)
           " | Out-String
           choco install wget -y
-          wget $lamaUrl64 -o lama264.zpi
+          wget $lamaUrl64 -o lama264.zip
           wget $lamaUrl -o lama2.zip
           echo "============================="
           ls
