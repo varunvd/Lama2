@@ -88,7 +88,6 @@ jobs:
           rm updateChocolateyPS1.py
           rm bumpVersion.py
           choco pack
-          ls
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
           
                                       
