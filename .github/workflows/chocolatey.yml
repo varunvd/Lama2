@@ -84,6 +84,7 @@ jobs:
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
           cd LamaChocolatey
           python3 updateChocolateyPS1.py $lamaUrl $lamaUrlSHA $lamaUrl64 $lamaUrlSHA64
+          rm updateChocolateyPS1.py
           choco pack
           ls
           choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
