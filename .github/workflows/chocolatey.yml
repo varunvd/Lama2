@@ -76,7 +76,6 @@ jobs:
               link = main()
               print(link)
           " | Out-String
-          
           choco install wget -y
           wget $lamaUrl64 -o lama264.zpi
           wget $lamaUrl -o lama2.zip
