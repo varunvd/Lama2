@@ -79,8 +79,8 @@ jobs:
           choco install wget -y
           wget $lamaUrl64 -o lama264.zip
           wget $lamaUrl -o lama2.zip
-          $lamaUrlSHA = Get-FileHash lama2.zip | Out-String
-          $lamaUrlSHA64 = Get-FileHash lama264.zip | Out-String
+          $lamaUrlSHA =  Get-FileHash lama2.zip | Select-Object Hash  | ft -HideTableHeaders | Out-String
+          $lamaUrlSHA64 =  Get-FileHash lama264.zip | Select-Object Hash  | ft -HideTableHeaders | Out-String
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
           cd LamaChocolatey
           python3 updateChocolateyPS1.py $lamaUrl $lamaUrlSHA $lamaUrl64 $lamaUrlSHA64
