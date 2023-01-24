@@ -79,6 +79,9 @@ jobs:
           choco install wget -y
           wget $lamaUrl64 -o lama264.zpi
           wget $lamaUrl -o lama2.zip
+          echo "============================="
+          ls
+          echo "============================="
           $lamaUrlSHA = Get-FileHash lama2.zip | Out-String
           $lamaUrlSHA64 = Get-FileHash lama264.zip | Out-String
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
