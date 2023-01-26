@@ -89,7 +89,9 @@ jobs:
           python3 bumpVersion.py $lamaUrl
           rm updateChocolateyPS1.py
           rm bumpVersion.py
+          $version = $lamaUrl64.split('/')[-2].replace('v', '')
+          $filename = "lama2.${version}.nupkg"
           choco pack
-          choco apikey --key  ${{ secrets.CHOCOLATELY_API_TOKEN }} --source https://push.chocolatey.org/
+          choco push ${filename} --source https://push.chocolatey.org/
           
                                       
