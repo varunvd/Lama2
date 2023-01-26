@@ -93,6 +93,6 @@ jobs:
           $version = $lamaUrl64.split('/')[-2].replace('v', '')
           $filename = "lama2.${version}.nupkg"
           choco pack
-          choco push ${filename} --source https://push.chocolatey.org/
+          choco push ${filename} --source https://push.chocolatey.org/ --api-key dummy
           
                                       
