@@ -86,6 +86,8 @@ jobs:
           git clone https://github.com/HexmosTech/Lama2-Chocolatey.git LamaChocolatey
           cd LamaChocolatey
           python3 updateChocolateyPS1.py $lamaUrl $lamaUrlSHA $lamaUrl64 $lamaUrlSHA64
+          echo "Lama URL"
+          echo $lamaUrl
           python3 bumpVersion.py $lamaUrl
           rm updateChocolateyPS1.py
           rm bumpVersion.py
