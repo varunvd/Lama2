@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: amake/innosetup
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build Docker image
+      run: docker build . --file Dockerfile --tag lama2/wget
+
+    - name: Run Docker container
+      run: docker run --volume "${{ github.workspace }}:/work" lama2/wget
