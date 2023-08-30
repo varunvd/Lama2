@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/HexmosTech/gabs/v2"
@@ -10,13 +11,14 @@ import (
 
 type Lama2Parser struct {
 	*Parser
-	Context map[string]bool
+	Context   map[string]bool
+	MarkRange map[string]int
 }
 
 // NewLama2Parser creates a new Lama2Parser
 // and initializes it properly
 func NewLama2Parser() *Lama2Parser {
-	p := &Lama2Parser{&Parser{}, make(map[string]bool)}
+	p := &Lama2Parser{&Parser{}, make(map[string]bool), make(map[string]int)}
 	p.Pm = p
 	p.Init()
 	return p
@@ -35,10 +37,109 @@ func (p *Lama2Parser) Start() (*gabs.Container, error) {
 	return nil, e
 }
 
-// Lama2File applies the rule:
-// HTTPVerb Multipart? TheURL Details?
 func (p *Lama2Parser) Lama2File() (*gabs.Container, error) {
+	// Trying to get:
+	// PSBlock? Requestor [SPSBlock Requestor]*
+
 	log.Trace().Msg("Within Lama2File")
+	temp := gabs.New()
+	tempArr, e1 := temp.Array()
+	if e1 != nil {
+		return nil, errors.New("couldn't create Array for the parsed data")
+	}
+	// optionally match processor
+	res2, procE1 := p.Match([]string{"Processor"})
+	if procE1 == nil {
+		tempArr.ArrayAppend(res2)
+	}
+
+	_, sepE1 := p.Match([]string{"Separator"})
+	if procE1 != nil && sepE1 == nil {
+		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Separator without preceding processor block found", []string{})
+	} else if procE1 == nil && sepE1 != nil {
+		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Processor without subsequent requestor block found", []string{})
+	} else {
+		log.Debug().Str("Found separator", "---").Msg("")
+	}
+
+	// match requester
+	res3, reqE1 := p.Match([]string{"Requester"})
+	if reqE1 != nil {
+		return nil, reqE1
+	}
+
+	tempArr.ArrayAppend(res3)
+
+	log.Debug().Str("Parse structure so far", tempArr.String())
+
+	// until file is done:
+	var res4, res5 *gabs.Container
+	var procE2, e5 error
+	for p.Pos < p.TotalLen {
+		_, sepE2 := p.Match([]string{"Separator"})
+		if sepE2 != nil {
+			return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Separator expected (1)", []string{})
+		}
+		// match processor
+		res4, procE2 = p.Match([]string{"Processor"})
+		if procE2 != nil {
+			return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Processor expected (2)", []string{})
+		}
+
+		if p.Pos < p.TotalLen {
+			_, sepE3 := p.Match([]string{"Separator"})
+			if sepE3 != nil {
+				return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Separator exepcted (3)", []string{})
+			}
+
+		}
+
+		// match requester
+		if p.Pos < p.TotalLen {
+			res5, e5 = p.Match([]string{"Requester"})
+			if e5 != nil {
+				return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Request block exepcted (4)", []string{})
+			}
+
+			tempArr.ArrayAppend(res4)
+			tempArr.ArrayAppend(res5)
+		}
+	}
+	return tempArr, nil
+}
+
+func (p *Lama2Parser) Processor() (*gabs.Container, error) {
+	log.Trace().Msg("Within Processor")
+	// A Processor cannot start with any of the HTTP Verbs
+	res := p.LookAhead([]string{"HTTPVerb"})
+	log.Debug().Bool("HTTPVerb LookAhead result", res)
+	if res {
+		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "HTTPVerb found at start of block; cannot be a Requestor block", []string{})
+	}
+	temp := gabs.New()
+	res2, _ := p.MatchUntil("\n---\n")
+	temp.Set("processor", "type")
+	temp.Set(res2, "value")
+	log.Debug().Str("Processor block parsed", res2.String()).Msg("")
+
+	return temp, nil
+}
+
+func (p *Lama2Parser) Separator() (*gabs.Container, error) {
+	log.Trace().Msg("Within Separator")
+	temp := gabs.New()
+	s, e := p.Keyword("---\n", false, false, false)
+	temp.Set(string(s))
+	if e != nil {
+		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Couldnt' find separator", []string{})
+	}
+	return temp, nil
+}
+
+// Requester applies the rule:
+// HTTPVerb Multipart? TheURL Details?
+func (p *Lama2Parser) Requester() (*gabs.Container, error) {
+	log.Trace().Msg("Within Requester")
 	res, e := p.Match([]string{"HTTPVerb"})
 	temp := gabs.New()
 	if e == nil {
@@ -68,27 +169,29 @@ func (p *Lama2Parser) Lama2File() (*gabs.Container, error) {
 
 func (p *Lama2Parser) TheURL() (*gabs.Container, error) {
 	res := []string{}
-	kw, e := p.Keyword("http", true, false, true)
-	if e == nil {
-		res = append(res, string(kw))
-	} else {
-		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Couldn't find URL (starting with http(s)", []string{})
-	}
+	/*
+		kw, e := p.Keyword("http", true, false, true)
+		if e == nil {
+			res = append(res, string(kw))
+		} else {
+			return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Couldn't find URL (starting with http(s)", []string{})
+		}
 
-	_, e = p.CharClass("s")
-	if e == nil {
-		res = append(res, "s")
-	}
+		_, e = p.CharClass("s")
+		if e == nil {
+			res = append(res, "s")
+		}
 
-	_, e = p.Keyword("://", false, false, true)
-	if e == nil {
-		res = append(res, "://")
-	} else {
-		return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Couldn't find URL (starting with http(s)://", []string{})
-	}
+		_, e = p.Keyword("://", false, false, true)
+		if e == nil {
+			res = append(res, "://")
+		} else {
+			return nil, utils.NewParseError(p.Pos+1, p.LineNum+1, "Couldn't find URL (starting with http(s)://", []string{})
+		}
+	*/
 
 	for {
-		up, err := p.CharClass("A-Za-z0-9-._~:/?#[]@!$&'()*+,;%=")
+		up, err := p.CharClass("A-Za-z0-9-._~:/?#[]@!$&'()*+,;%=}{")
 		if err == nil {
 			res = append(res, string(up))
 		} else {

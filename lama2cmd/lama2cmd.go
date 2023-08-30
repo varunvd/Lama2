@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/HexmosTech/lama2/importer"
 	outputmanager "github.com/HexmosTech/lama2/outputManager"
+	"github.com/HexmosTech/lama2/utils"
 	"github.com/jessevdk/go-flags"
 	"github.com/rs/zerolog/log"
 )
@@ -14,15 +16,17 @@ import (
 // The Opts structure stores user preferences, and is used throughout
 // the module to make various decisions.
 type Opts struct {
-	Output  string `short:"o" long:"output" description:"Path to output JSON file to store logs, headers and result"`
-	Verbose []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
-	// Prettify bool   `short:"p" long:"prettify" description:"Prettify specified .lama file"`
+	Output   string `short:"o" long:"output" description:"Path to output JSON file to store logs, headers and result"`
+	Verbose  []bool `short:"v" long:"verbose" description:"Show verbose debug information"`
+	Prettify bool   `short:"b" long:"prettify" description:"Prettify specified .l2 file"`
 	// Sort     bool   `short:"s" long:"sort" description:"Sort specification into recommended order"`
+	Convert     string `short:"c" long:"convert" description:"Generate code in given language and library (ex: python.requests); reference: tinyurl.com/l2codegen"`
 	Nocolor     bool   `short:"n" long:"nocolor" description:"Disable color in httpie output"`
 	Update      bool   `short:"u" long:"update" description:"Update l2 binary to the latest released version (Linux/MacOS only)"`
 	PostmanFile string `short:"p" long:"postmanfile" description:"JSON export from Postman (Settings -> Data -> Export Data)"`
 	LamaDir     string `short:"l" long:"lama2dir" description:"Output directory to put .l2 files after conversion from Postman format"`
 	Help        bool   `short:"h" long:"help" group:"AddHelp" description:"Usage help for Lama2"`
+	Env         string `short:"e" long:"env" default:"UNSET_VU5TRVQ" description:"Get a JSON of environment variables revelant to input arg"`
 	Version     bool   `long:"version" description:"Print Lama2 binary version"`
 
 	Positional struct {
@@ -47,7 +51,7 @@ func getParsedInput(argList []string) (Opts, []string) {
 		log.Fatal().
 			Str("Type", "Preprocess").
 			Strs("arglist", argList).
-			Msg(fmt.Sprint("Couldn't parse argument list"))
+			Msg("Couldn't parse argument list")
 	}
 
 	switch len(o.Verbose) {
@@ -71,6 +75,33 @@ func getParsedInput(argList []string) (Opts, []string) {
 		Msg("Parsed inputs")
 
 	return o, args
+}
+
+func ArgParsing(o *Opts, version string) {
+	if o.Version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+	if o.Update {
+		utils.UpdateSelf()
+		os.Exit(0)
+	}
+	if len(o.PostmanFile) > 0 {
+		if len(o.LamaDir) > 0 {
+			importer.PostmanImporter(o.PostmanFile, o.LamaDir)
+			os.Exit(0)
+		}
+		log.Fatal().Msg("To convert Postman export to Lama2, try: l2 -p PostmanFile -l Lama2Dir")
+		os.Exit(1)
+	}
+	if len(o.LamaDir) > 0 {
+		if len(o.PostmanFile) > 0 {
+			importer.PostmanImporter(o.PostmanFile, o.LamaDir)
+			os.Exit(0)
+		}
+		log.Fatal().Msg("To convert Postman export to Lama2, try: l2 -p PostmanFile -l Lama2Dir")
+		os.Exit(1)
+	}
 }
 
 // GetAndValidateCmd takes in the user's CLI input, and checks

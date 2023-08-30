@@ -10,16 +10,125 @@ Package preprocess provides facilities to expand environment variables in \`.l2\
 
 ## Index
 
-- [func LamaFile(inputFile string) (string, string)](<#func-lamafile>)
+- [func Expand\(s string, vm \*goja.Runtime, mapping map\[string\]string\) string](<#Expand>)
+- [func ExpandEnv\(s string, vm \*goja.Runtime\) string](<#ExpandEnv>)
+- [func ExpandHeaders\(block \*gabs.Container, vm \*goja.Runtime\)](<#ExpandHeaders>)
+- [func ExpandJSON\(block \*gabs.Container, vm \*goja.Runtime\)](<#ExpandJSON>)
+- [func ExpandURL\(block \*gabs.Container, vm \*goja.Runtime\)](<#ExpandURL>)
+- [func GetL2EnvVariables\(dir string\) \(map\[string\]map\[string\]interface\{\}, error\)](<#GetL2EnvVariables>)
+- [func GetLamaFileAsString\(path string\) string](<#GetLamaFileAsString>)
+- [func LamaFile\(inputFile string\) \(string, string\)](<#LamaFile>)
+- [func LoadEnvFile\(l2path string\)](<#LoadEnvFile>)
+- [func LoadEnvironments\(dir string\)](<#LoadEnvironments>)
+- [func ProcessVarsInBlock\(block \*gabs.Container, vm \*goja.Runtime\)](<#ProcessVarsInBlock>)
+- [func SearchL2ConfigEnv\(dir string\) \(string, error\)](<#SearchL2ConfigEnv>)
 
 
-## func [LamaFile](<https://github.com/HexmosTech/Lama2/blob/master/preprocess/preprocess.go#L37>)
+<a name="Expand"></a>
+## func [Expand](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/expandvar.go#L19>)
+
+```go
+func Expand(s string, vm *goja.Runtime, mapping map[string]string) string
+```
+
+Expand replaces $\{var\} or $var in the string based on the mapping function. For example, os.ExpandEnv\(s\) is equivalent to os.Expand\(s, os.Getenv\).
+
+<a name="ExpandEnv"></a>
+## func [ExpandEnv](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/expandvar.go#L75>)
+
+```go
+func ExpandEnv(s string, vm *goja.Runtime) string
+```
+
+ExpandEnv replaces $\{var\} or $var in the string according to the values of the current environment variables. References to undefined variables are replaced by the empty string.
+
+<a name="ExpandHeaders"></a>
+## func [ExpandHeaders](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L29>)
+
+```go
+func ExpandHeaders(block *gabs.Container, vm *goja.Runtime)
+```
+
+
+
+<a name="ExpandJSON"></a>
+## func [ExpandJSON](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L81>)
+
+```go
+func ExpandJSON(block *gabs.Container, vm *goja.Runtime)
+```
+
+
+
+<a name="ExpandURL"></a>
+## func [ExpandURL](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L49>)
+
+```go
+func ExpandURL(block *gabs.Container, vm *goja.Runtime)
+```
+
+
+
+<a name="GetL2EnvVariables"></a>
+## func [GetL2EnvVariables](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L169>)
+
+```go
+func GetL2EnvVariables(dir string) (map[string]map[string]interface{}, error)
+```
+
+
+
+<a name="GetLamaFileAsString"></a>
+## func [GetLamaFileAsString](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L196>)
+
+```go
+func GetLamaFileAsString(path string) string
+```
+
+
+
+<a name="LamaFile"></a>
+## func [LamaFile](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L210>)
 
 ```go
 func LamaFile(inputFile string) (string, string)
 ```
 
 LamaFile takes in a path to an API file. It moves into the API file directory, reads the API contents, loads the \`l2.env\` file if available, and finally substitutes environment vars in the API contents Once done, it reverts back to the original directory, and returns the processed l2 file.
+
+<a name="LoadEnvFile"></a>
+## func [LoadEnvFile](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L115>)
+
+```go
+func LoadEnvFile(l2path string)
+```
+
+
+
+<a name="LoadEnvironments"></a>
+## func [LoadEnvironments](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L123>)
+
+```go
+func LoadEnvironments(dir string)
+```
+
+
+
+<a name="ProcessVarsInBlock"></a>
+## func [ProcessVarsInBlock](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L23>)
+
+```go
+func ProcessVarsInBlock(block *gabs.Container, vm *goja.Runtime)
+```
+
+
+
+<a name="SearchL2ConfigEnv"></a>
+## func [SearchL2ConfigEnv](<https://github.com/HexmosTech/Lama2/blob/main/preprocess/preprocess.go#L102>)
+
+```go
+func SearchL2ConfigEnv(dir string) (string, error)
+```
 
 
 

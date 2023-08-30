@@ -5,19 +5,70 @@
 package contoller
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/HexmosTech/gabs/v2"
+	"github.com/HexmosTech/httpie-go"
 	"github.com/HexmosTech/lama2/cmdexec"
 	"github.com/HexmosTech/lama2/cmdgen"
-	"github.com/HexmosTech/lama2/importer"
+	"github.com/HexmosTech/lama2/codegen"
+	env "github.com/HexmosTech/lama2/l2env"
 	"github.com/HexmosTech/lama2/lama2cmd"
 	outputmanager "github.com/HexmosTech/lama2/outputManager"
 	"github.com/HexmosTech/lama2/parser"
 	"github.com/HexmosTech/lama2/preprocess"
+	"github.com/HexmosTech/lama2/prettify"
 	"github.com/HexmosTech/lama2/utils"
+	"github.com/dop251/goja"
 	"github.com/rs/zerolog/log"
 )
+
+func GetParsedAPIBlocks(parsedAPI *gabs.Container) []*gabs.Container {
+	return parsedAPI.S("value").Data().(*gabs.Container).Children()
+}
+
+func ExecuteProcessorBlock(block *gabs.Container, vm *goja.Runtime) {
+	b := block.S("value").Data().(*gabs.Container)
+	log.Debug().Str("Processor block incoming block", block.String()).Msg("")
+	script := b.Data().(string)
+	cmdexec.RunVMCode(script, vm)
+}
+
+func ExecuteRequestorBlock(block *gabs.Container, vm *goja.Runtime, opts *lama2cmd.Opts, dir string) httpie.ExResponse {
+	preprocess.ProcessVarsInBlock(block, vm)
+	// TODO - replace stuff in headers, and varjson and json as well
+	cmd, stdinBody := cmdgen.ConstructCommand(block, opts)
+	log.Debug().Str("Stdin Body to be passed into httpie", stdinBody).Msg("")
+	resp, e1 := cmdexec.ExecCommand(cmd, stdinBody, dir)
+	log.Debug().Str("Response from ExecCommand", resp.Body).Msg("")
+	if e1 == nil {
+		chainCode := cmdexec.GenerateChainCode(resp.Body)
+		cmdexec.RunVMCode(chainCode, vm)
+	} else {
+		log.Fatal().Str("Error from ExecCommand", e1.Error())
+		os.Exit(1)
+	}
+	return resp
+}
+
+func HandleParsedFile(parsedAPI *gabs.Container, o *lama2cmd.Opts, dir string) {
+	parsedAPIblocks := GetParsedAPIBlocks(parsedAPI)
+	vm := cmdexec.GetJSVm()
+	var resp httpie.ExResponse
+	for i, block := range parsedAPIblocks {
+		log.Debug().Int("Block num", i).Msg("")
+		log.Debug().Str("Block getting processed", block.String()).Msg("")
+		blockType := block.S("type").Data().(string)
+		if blockType == "processor" {
+			ExecuteProcessorBlock(block, vm)
+		} else if blockType == "Lama2File" {
+			resp = ExecuteRequestorBlock(block, vm, o, dir)
+		}
+	}
+	if o.Output != "" {
+		outputmanager.WriteJSONOutput(resp, o.Output)
+	}
+}
 
 // Process initiates the following tasks in the given order:
 // 1. Parse command line arguments
@@ -29,43 +80,36 @@ import (
 // 7. Optionally, post-process and write results to a JSON file
 func Process(version string) {
 	o := lama2cmd.GetAndValidateCmd(os.Args)
-	if o.Version {
-		fmt.Println(version)
-		return
-	}
-	if o.Update {
-		utils.UpdateSelf()
-		return
-	}
-	if len(o.PostmanFile) > 0 {
-		if len(o.LamaDir) > 0 {
-			importer.PostmanImporter(o.PostmanFile, o.LamaDir)
-			return
-		}
-		log.Fatal().Msg("To convert Postman export to Lama2, try: l2 -p PostmanFile -l Lama2Dir")
-	}
-	if len(o.LamaDir) > 0 {
-		if len(o.PostmanFile) > 0 {
-			importer.PostmanImporter(o.PostmanFile, o.LamaDir)
-			return
-		}
-		log.Fatal().Msg("To convert Postman export to Lama2, try: l2 -p PostmanFile -l Lama2Dir")
-	}
-	apiContent, apiDir := preprocess.LamaFile(o.Positional.LamaAPIFile)
+	lama2cmd.ArgParsing(o, version)
+
+	apiContent := preprocess.GetLamaFileAsString(o.Positional.LamaAPIFile)
+	_, dir, _ := utils.GetFilePathComponents(o.Positional.LamaAPIFile)
+	oldDir, _ := os.Getwd()
+	utils.ChangeWorkingDir(dir)
+
+	env.ProcessEnvironmentVariables(o, dir)
+
+	preprocess.LoadEnvironments(dir)
+	utils.ChangeWorkingDir(oldDir)
 	p := parser.NewLama2Parser()
 	parsedAPI, e := p.Parse(apiContent)
+	if o.Convert != "" {
+		codegen.GenerateTargetCode(o.Convert, parsedAPI)
+		return
+	}
+
+	if o.Prettify {
+		prettify.Prettify(parsedAPI, p.Context, p.MarkRange, apiContent, o.Positional.LamaAPIFile)
+		return
+	}
+
 	if e != nil {
 		log.Fatal().
 			Str("Type", "Controller").
 			Str("LamaFile", o.Positional.LamaAPIFile).
 			Str("Error", e.Error()).
-			Msg(fmt.Sprint("Parse Error"))
+			Msg("Parse Error")
 	}
 	log.Debug().Str("Parsed API", parsedAPI.String()).Msg("")
-	cmdStr := cmdgen.ConstructCommand(parsedAPI, o)
-	log.Info().Msg("COMMAND:\n" + cmdStr)
-	op := cmdexec.ExecCommand(cmdStr, apiDir)
-	if o.Output != "" {
-		outputmanager.WriteJSONOutput(op, o.Output)
-	}
+	HandleParsedFile(parsedAPI, o, dir)
 }

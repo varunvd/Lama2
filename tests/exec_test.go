@@ -1,30 +1,48 @@
 package tests
 
 import (
+	"os"
 	"testing"
 
-	"github.com/HexmosTech/lama2/cmdexec"
-	"github.com/HexmosTech/lama2/cmdgen"
+	"github.com/HexmosTech/gabs/v2"
+	controller "github.com/HexmosTech/lama2/controller"
 	"github.com/HexmosTech/lama2/lama2cmd"
 	"github.com/HexmosTech/lama2/parser"
-	"github.com/HexmosTech/lama2/preprocess"
-	"github.com/rs/zerolog/log"
 )
 
 func TestExec(t *testing.T) {
-	opts := lama2cmd.Opts{}
-	l2File := "../elfparser/ElfTestSuite/y_0012_varjson_multipart.l2"
-	// s, _ := FileToString()
-	// l2File := "../elfparser/ElfTestSuite/y_0014_at_equal_ambiguity.l2"
-	// l2File := "../elfparser/ElfTestSuite/y_0000_basic_get.l2"
-	pp, apiDir := preprocess.LamaFile(l2File)
+	fpath := "../elfparser/ElfTestSuite/y_0012_varjson_multipart.l2"
+	fdir := "../elfparser/ElfTestSuite/"
+	cmd := []string{"l2", fpath}
+	opts := lama2cmd.GetAndValidateCmd(cmd)
+	s, _ := FileToString(fpath)
 	lp := parser.NewLama2Parser()
-	res, e := lp.Parse(pp)
+	res, e := lp.Parse(s)
 	if e != nil {
 		t.Fatalf("Error on parsing")
 	}
-	r2 := cmdgen.ConstructCommand(res, &opts)
-	log.Debug().Str("Generated command", r2).Msg("")
-	r3 := cmdexec.ExecCommand(r2, apiDir)
-	log.Debug().Str("Execution result", r3).Msg("")
+	controller.HandleParsedFile(res, opts, fdir)
+	// log.Debug().Strs("Generated command", r2).Msg("")
+	// r3, _ := cmdexec.ExecCommand(r2, body, apiDir)
+	// log.Debug().Str("Execution result", r3).Msg("")
+}
+
+func Test404(t *testing.T) {
+	fname := "404.json"
+	fpath := "../elfparser/ElfTestSuite/n_0003_404.l2"
+	// fdir := "../elfparser/ElfTestSuite/"
+	os.Args = []string{"l2", "-o", fname, fpath}
+	controller.Process("randomVersion")
+	res, e := gabs.ParseJSONFile(fname)
+	if e != nil {
+		os.Remove(fname)
+		t.Fatalf("Couldn't find output file")
+	}
+	val := res.S("body").Data().(string)
+	if len(val) == 0 {
+		os.Remove(fname)
+		t.Fatalf("Expected body to have 404 data")
+	}
+
+	os.Remove(fname)
 }

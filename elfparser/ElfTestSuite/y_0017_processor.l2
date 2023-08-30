@@ -1,0 +1,4 @@
+let url = "localhost:8080/get"
+---
+GET
+http://${url}

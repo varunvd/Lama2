@@ -64,3 +64,46 @@ func (p *Parser) Match(rules []string) (*gabs.Container, error) {
 	}
 	return nil, utils.NewParseError(lastErrorPos, lastErrorLine, "Expected %s but got %s", []string{strings.Join(lastErrorRules, ","), string(p.Text[lastErrorPos])})
 }
+
+func (p *Parser) LookAhead(rules []string) bool {
+	p.eatWhitespace()
+
+	for _, rule := range rules {
+		initialPos := p.Pos
+		log.Trace().Str("Rule", rule).Strs("Rules", rules).Msg("")
+		res := p.ruleMethodMap[rule].Call([]reflect.Value{})
+		op := res[0].Interface().(*gabs.Container)
+		log.Trace().Str("Rule res", op.String()).Msg("")
+		e := res[1]
+		log.Trace().Str("Rule error", e.String()).Msg("")
+		p.Pos = initialPos
+		if e.IsNil() {
+			p.eatWhitespace()
+			return true
+		}
+	}
+
+	return false
+}
+
+func (p *Parser) MatchUntil(end string) (*gabs.Container, error) {
+	chunk := make([]string, 0)
+	temp := gabs.New()
+	for {
+		oldPos := p.Pos
+		_, e1 := p.Keyword(end, false, false, false)
+		if e1 == nil {
+			p.Pos = oldPos
+			temp.Set(strings.Join(chunk, ""))
+			return temp, nil
+		}
+
+		r2, e2 := p.Char()
+		if e2 != nil {
+			break
+		}
+		chunk = append(chunk, string(r2))
+	}
+	temp.Set(strings.Join(chunk, ""))
+	return temp, nil
+}

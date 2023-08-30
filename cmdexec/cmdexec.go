@@ -5,14 +5,13 @@
 package cmdexec
 
 import (
-	"bytes"
-	"io"
+	"errors"
 	"os"
-	"os/exec"
-	"runtime"
+	"strings"
 
+	"github.com/HexmosTech/httpie-go"
 	"github.com/HexmosTech/lama2/utils"
-	"github.com/creack/pty"
+	"github.com/rs/zerolog/log"
 )
 
 // ExecCommand changes directory to the given `apiDir`
@@ -21,30 +20,15 @@ import (
 // to stdout.
 // Once execution finishes, previous CWD is restored,
 // and the command output is returned as a string
-func ExecCommand(cmdStr string, apiDir string) string {
+func ExecCommand(cmdSlice []string, stdinBody string, apiDir string) (httpie.ExResponse, error) {
 	oldDir, _ := os.Getwd()
 	utils.ChangeWorkingDir(apiDir)
-	var retStr string
-
-	if runtime.GOOS == "windows" {
-		f, err := exec.Command("cmd", "/C", cmdStr).Output()
-		if err != nil {
-			panic(err)
-		}
-		retStr = string(f)
-	} else {
-		c := exec.Command("bash", "-c", cmdStr)
-		f, err := pty.Start(c)
-		if err != nil {
-			panic(err)
-		}
-		var buffer1 bytes.Buffer
-		writer := io.MultiWriter(&buffer1, os.Stdout)
-		io.Copy(writer, f)
-		ret, _ := io.ReadAll(&buffer1)
-		retStr = string(ret)
+	resp, err := httpie.Lama2Entry(cmdSlice, strings.NewReader(stdinBody))
+	if err != nil {
+		log.Fatal().Str("Error from the API executor", err.Error()).Msg("")
+		return httpie.ExResponse{}, errors.New("Error from API executor: " + err.Error())
 	}
-
+	log.Debug().Str("Response body from API executor", resp.Body).Msg("")
 	utils.ChangeWorkingDir(oldDir)
-	return retStr
+	return resp, nil
 }

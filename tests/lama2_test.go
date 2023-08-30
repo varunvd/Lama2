@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/HexmosTech/gabs/v2"
+	contoller "github.com/HexmosTech/lama2/controller"
 	"github.com/HexmosTech/lama2/parser"
 	"github.com/HexmosTech/lama2/utils"
 	"github.com/rs/zerolog/log"
@@ -62,20 +63,18 @@ func PerformParserMatch(text string) (*gabs.Container, error) {
 	got, e := p.Parse(text)
 	if e == nil {
 		log.Debug().Str("Got", got.String()).Msg("")
-	} else {
-		// t.Errorf("Error not expected")
-		// fmt.Println(e)
 	}
 	return got, e
 }
 
-func TestValidFiles(t *testing.T) {
+func TestValidFiles(_ *testing.T) {
 	matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_*")
 	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0009_varjson_basic.l2")
 	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0012_varjson_multipart.l2")
 	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0014_at_equal_ambiguity.l2")
 	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0015_number_vars.l2")
 	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0016_simple_array.l2")
+	// matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "y_0017_processor.l2")
 	for _, m := range matchFiles {
 		b, err := os.ReadFile(m) // just pass the file name
 		if err != nil {
@@ -88,7 +87,7 @@ func TestValidFiles(t *testing.T) {
 	}
 }
 
-func TestInvalidFiles(t *testing.T) {
+func TestInvalidFiles(_ *testing.T) {
 	matchFiles, _ := getDataFiles("../elfparser/ElfTestSuite", "n_*")
 	for _, m := range matchFiles {
 		b, err := os.ReadFile(m) // just pass the file name
@@ -112,8 +111,8 @@ func TestJsonParserExhaustive(t *testing.T) {
 		// "y_string_accepted_surrogate_pairs.json",
 		// "y_string_last_surrogates_1_and_2.json",
 		// "y_string_surrogates_U+1D11E_MUSICAL_SYMBOL_G_CLEF.json",
-		// "y_string_unescaped_char_delete.json",
-		// "y_string_with_del_character.json",
+		"y_string_unescaped_char_delete.json",
+		"y_string_with_del_character.json",
 		// "y_string_unicode_U+10FFFE_nonchar.json",
 		// "y_string_unicode_U+1FFFE_nonchar.json",
 	}
@@ -137,7 +136,13 @@ func TestJsonParserExhaustive(t *testing.T) {
 		if e3 != nil {
 			return
 		}
-		jp := jj.S("value", "details", "ip_data")
+
+		blocks := contoller.GetParsedAPIBlocks(jj)
+		var jp *gabs.Container
+		for _, block := range blocks {
+			jp = block
+		}
+		jp = jp.S("details", "ip_data")
 
 		var v1, v2 interface{}
 		json.Unmarshal([]byte(gj.String()), &v1)

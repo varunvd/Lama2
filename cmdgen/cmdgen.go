@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func assembleCmdString(httpv string, url string, jsonObj *gabs.Container, headers *gabs.Container, multipart bool, o *lama2cmd.Opts) string {
+func assembleCmdString(httpv string, url string, jsonObj *gabs.Container, headers *gabs.Container, multipart bool, o *lama2cmd.Opts) ([]string, string) {
 	command := make([]string, 0)
 	log.Info().
 		Str("Type", "Construct Command").
@@ -49,18 +49,19 @@ func assembleCmdString(httpv string, url string, jsonObj *gabs.Container, header
 		jsonStr = dst.String()
 	}
 
-	if !multipart && jsonStr != "" {
-		command = append(command, "echo '")
-		command = append(command, jsonStr)
-		command = append(command, "' |")
-	}
+	/*
+		if !multipart && jsonStr != "" {
+			command = append(command, "echo '")
+			command = append(command, jsonStr)
+			command = append(command, "' |")
+		}*/
 
-	command = append(command, "http ")
+	command = append(command, "ht ")
 	if o.Nocolor {
 		command = append(command, "--pretty=none ")
 	}
 	if multipart {
-		command = append(command, "--multipart ")
+		command = append(command, "--headers", "--ignore-stdin", "--form")
 	}
 
 	command = append(command, httpv+" ")
@@ -70,38 +71,43 @@ func assembleCmdString(httpv string, url string, jsonObj *gabs.Container, header
 		for key, val := range jsonObj.Data().(*gabs.Container).ChildrenMap() {
 			command = append(command, "'"+key+"'='"+val.Data().(string)+"'  ")
 		}
-		for key, val := range files.Data().(*gabs.Container).ChildrenMap() {
-			command = append(command, "'"+key+"'@'"+val.Data().(string)+"'  ")
+		for key, val := range files.ChildrenMap() {
+			command = append(command, key+"@"+val.Data().(string))
 		}
 	}
 
 	if headers != nil {
 		for key, val := range headers.Data().(*gabs.Container).ChildrenMap() {
-			command = append(command, "'"+key+":"+val.Data().(*gabs.Container).Data().(string)+"'  ")
+			command = append(command, key+":"+val.Data().(*gabs.Container).Data().(string))
 		}
 	}
-
-	commandStr := strings.Join(command, "")
-	log.Info().Str("Generated command", commandStr)
-	return commandStr
+	cleanCommand := make([]string, 0)
+	for _, c := range command {
+		cleanC := strings.TrimSpace(c)
+		cleanCommand = append(cleanCommand, cleanC)
+	}
+	if multipart {
+		return cleanCommand, ""
+	}
+	return cleanCommand, jsonStr
 }
 
 // ConstructCommand extracts the HTTP verb, url and other
 // API file inputs, figures out the type of target command
 // and finally generates a string representing the generated
 // command
-func ConstructCommand(parsedInput *gabs.Container, o *lama2cmd.Opts) string {
+func ConstructCommand(parsedInput *gabs.Container, o *lama2cmd.Opts) ([]string, string) {
 	log.Info().Str("ParsedInput", parsedInput.String()).Msg("")
-	httpv := parsedInput.S("value", "verb", "value")
-	url := parsedInput.S("value", "url", "value")
-	jsonObj := parsedInput.S("value", "details", "ip_data")
-	headers := parsedInput.S("value", "details", "headers")
-	multipart := parsedInput.S("value", "multipart", "value")
+	httpv := parsedInput.S("verb", "value")
+	url := parsedInput.S("url", "value")
+	jsonObj := parsedInput.S("details", "ip_data")
+	headers := parsedInput.S("details", "headers")
+	multipart := parsedInput.S("multipart", "value")
 	multipartBool := false
 	if multipart != nil {
 		multipartBool = true
 	}
 
-	res := assembleCmdString(httpv.Data().(string), url.Data().(string), jsonObj, headers, multipartBool, o)
-	return res
+	res, stdinBody := assembleCmdString(httpv.Data().(string), url.Data().(string), jsonObj, headers, multipartBool, o)
+	return res, stdinBody
 }
