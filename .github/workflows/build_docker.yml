@@ -7,7 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: amake/innosetup
+    container: 
+      image: amake/innosetup
+      options: --user root
 
     steps:
 
