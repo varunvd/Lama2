@@ -22,6 +22,9 @@ jobs:
     - name: Test checkout
       run: ls -l
 
+    - name: Install packages
+      run: apt update -y && apt install wget -y && apt install unzip -y
+
     - name: Build Docker image
       run: docker build . --file Dockerfile --tag lama2/wget
 
