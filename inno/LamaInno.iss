@@ -7,7 +7,7 @@ DefaultGroupName=Lama2
 UninstallDisplayIcon={app}\l2.exe
 Compression=lzma2
 SolidCompression=yes
-OutputDir=inno
+OutputDir=.
 
 [Files]
 Source: "l2.exe"; DestDir: "{app}"
