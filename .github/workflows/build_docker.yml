@@ -19,6 +19,9 @@ jobs:
     - name: Permission to xclient
       run: chmod -R 777 /home/xclient/.wine
 
+    - name: Change .wine ownership to root
+      run: sudo chown -R root /home/xclient/.wine
+
     - name: Install packages
       run: apt update -y && apt install wget -y && apt install unzip -y
 
