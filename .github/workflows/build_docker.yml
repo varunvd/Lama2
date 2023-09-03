@@ -60,10 +60,8 @@ jobs:
 
           if __name__ == '__main__':
               link = main()
-              print(link)"
+              print(link)" | wget
               
-    - name: Download zip files
-      run: wget https://github.com/HexmosTech/Lama2/releases/download/v1.5.7/l2-v1.5.7-windows-amd64.zip
 
     - name: Unzip windows installer
       run: unzip l2-v1.5.7-windows-amd64.zip -d inno/
