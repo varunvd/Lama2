@@ -25,6 +25,9 @@ jobs:
     - name: Unzip windows installer
       run: unzip l2-v1.5.7-windows-amd64.zip -d inno/
 
+    - name: Create exe file
+      run: cd inno && iscc LamaInno.iss 
+
     - name: List files inside inno
       run: ls -l inno
 
