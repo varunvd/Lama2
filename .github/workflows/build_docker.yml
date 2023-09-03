@@ -34,4 +34,9 @@ jobs:
     - name: Build exe
       run: cd inno && iscc LamaInno.iss && ls -l
 
+    - name: Download a single artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: inno/mysetup.exe
+
 
