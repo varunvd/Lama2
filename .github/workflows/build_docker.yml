@@ -12,21 +12,17 @@ jobs:
       options: --user root
 
     steps:
-
-    - name: Build Docker image
-      run: ls -l
       
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Test checkout
-      run: ls -l
-
     - name: Install packages
       run: apt update -y && apt install wget -y && apt install unzip -y
 
-    - name: Build Docker image
-      run: docker build . --file Dockerfile --tag lama2/wget
+    - name: Download zip files
+      run: wget https://github.com/HexmosTech/Lama2/releases/download/v1.5.7/l2-v1.5.7-windows-amd64.zip
 
-    - name: Run Docker container
-      run: docker run --volume "${{ github.workspace }}:/work" lama2/wget
+    - name: List all files
+      run: ls -l
+
+
