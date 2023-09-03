@@ -16,6 +16,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Permission to xclient
+      run: chmod -R 777 /home/xclient/.wine
+
     - name: Install packages
       run: apt update -y && apt install wget -y && apt install unzip -y
 
@@ -25,10 +28,7 @@ jobs:
     - name: Unzip windows installer
       run: unzip l2-v1.5.7-windows-amd64.zip -d inno/
 
-    - name: cd to inno folder
-      run: cd inno && ls -l
-
-    - name: List files inside inno
-      run: ls -l 
+    - name: Build exe
+      run: cd inno && iscc LamaInno.iss && ls -l
 
 
