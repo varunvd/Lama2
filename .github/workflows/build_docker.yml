@@ -25,6 +25,9 @@ jobs:
     - name: Install packages
       run: apt update -y && apt install wget -y && apt install unzip -y
 
+    - name: Run python code
+      run: python --version
+
     - name: Download zip files
       run: wget https://github.com/HexmosTech/Lama2/releases/download/v1.5.7/l2-v1.5.7-windows-amd64.zip
 
