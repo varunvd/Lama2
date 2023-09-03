@@ -15,3 +15,6 @@ Source: "README.md"; DestDir: "{app}"; Flags: isreadme
 
 [Icons]
 Name: "{group}\Lama2"; Filename: "{app}\l2.exe"
+
+[Run]
+Filename: "{cmd}"; Parameters: "/C code --install-extension hexmos.Lama2"; StatusMsg: "Installing VS Code extension..."; Flags: runhidden
