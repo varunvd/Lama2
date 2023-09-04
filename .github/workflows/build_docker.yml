@@ -60,11 +60,11 @@ jobs:
 
           if __name__ == '__main__':
               link = main()
-              print(link)" | wget -i -
+              print(link)" | wget -P inno/64 -i -
               
 
     - name: Unzip windows installer
-      run: unzip l2-v1.5.7-windows-amd64.zip -d inno/
+      run: cd inno/64 && unzip *.zip -d .
 
     - name: Build exe
       run: cd inno && iscc LamaInno.iss && ls -l
