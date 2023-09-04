@@ -60,7 +60,7 @@ jobs:
 
           if __name__ == '__main__':
               link = main()
-              print(link)" | wget
+              print(link)" | wget -i -
               
 
     - name: Unzip windows installer
