@@ -25,7 +25,7 @@ jobs:
     - name: Install packages
       run: apt update -y && apt install wget -y && apt install unzip -y && apt install python3 -y
 
-    - name: Run python code
+    - name: Download latest 64 bit build
       run: | 
           python3 -c "
           import struct
@@ -61,19 +61,69 @@ jobs:
           if __name__ == '__main__':
               link = main()
               print(link)" | wget -P inno/64 -i -
+
+    - name: Download latest 32 bit build
+      run: | 
+          python3 -c "
+          import struct
+          import json
+          import http.client
+
+          def get_file():
+              conn = http.client.HTTPSConnection('api.github.com')
+              payload = ''
+              headers = {
+                  'User-Agent': 'Hexmos'
+              }
+              conn.request('GET', '/repos/HexmosTech/Lama2/releases/latest', payload, headers)
+              res = conn.getresponse()
+              data = res.read()
+              return json.loads(data.decode('utf-8'))
+
+          def get_platform():
+              return '386'
+
+          def search(files, platform):
+              search_string = 'windows-' + platform
+              for row in files['assets']:
+                  if search_string in row['name'] and 'md5' not in row['name']:
+                      return row['browser_download_url']            
+
+          def main():
+              files = get_file()
+              platform = get_platform()
+              download_link = search(files, platform)
+              return download_link
+
+          if __name__ == '__main__':
+              link = main()
+              print(link)" | wget -P inno/32 -i -
               
 
-    - name: Unzip windows installer
+    - name: Unzip 64 windows installer 
       run: cd inno/64 && unzip *.zip -d .
 
-    - name: Build exe
-      run: cd inno && iscc LamaInno.iss && ls -l
+    - name: Unzip 32 windows installer 
+      run: cd inno/32 && unzip *.zip -d .
 
-    - name: 'Upload Artifact'
+    - name: Build 64 bit exe
+      run: cd inno/64 && iscc LamaInno.iss && ls -l
+
+    - name: Build 32 bit exe
+      run: cd inno/32 && iscc LamaInno.iss && ls -l
+
+    - name: 'Upload 64 bit Artifact'
       uses: actions/upload-artifact@v3
       with:
         name: windows-x64-lama2.exe
-        path: inno/mysetup.exe
+        path: inno/64/mysetup.exe
+        retention-days: 5
+
+    - name: 'Upload 32 bit Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-x32-lama2.exe
+        path: inno/32/mysetup.exe
         retention-days: 5
 
 
